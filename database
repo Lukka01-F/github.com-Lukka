@@ -1,0 +1,98 @@
+
+import sqlite3
+
+
+def conectar():
+    return sqlite3.connect("bot.db")
+
+
+def crear_tablas():
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    # Tabla de usuarios
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER UNIQUE,
+            nombre TEXT,
+            username TEXT
+        )
+    """)
+
+    # Tabla de historial
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER,
+            numero1 REAL,
+            operador TEXT,
+            numero2 REAL,
+            resultado TEXT
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def guardar_usuario(telegram_id, nombre, username):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR IGNORE INTO usuarios
+        (telegram_id, nombre, username)
+        VALUES (?, ?, ?)
+    """, (telegram_id, nombre, username))
+
+    conn.commit()
+    conn.close()
+
+
+def guardar_operacion(
+    telegram_id,
+    numero1,
+    operador,
+    numero2,
+    resultado
+):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO historial
+        (telegram_id, numero1, operador, numero2, resultado)
+        VALUES (?, ?, ?, ?, ?)
+    """, (
+        telegram_id,
+        numero1,
+        operador,
+        numero2,
+        str(resultado)
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def obtener_historial(telegram_id):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT numero1, operador, numero2, resultado
+        FROM historial
+        WHERE telegram_id = ?
+        ORDER BY id DESC
+    """, (telegram_id,))
+
+    historial = cursor.fetchall()
+
+    conn.close()
+
+    return historial
